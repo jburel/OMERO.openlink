@@ -117,8 +117,8 @@ def get_omero_paths(client):
     Args:
         client: calling omero client object
     Returns:
-        managed_repo_dir: path to MANAGED_REPOSITORY of this omero instance (see config: omero.managed.dir)
-        orig_repo_dir: path to data of this omero instance (see config: omero.data.dir)
+        managed_repo_dir: path to MANAGED_REPOSITORY of this omero instance (see config: omero.managed.dir)  # noqa
+        orig_repo_dir: path to data of this omero instance (see config: omero.data.dir)  # noqa
     """
     resources = client.sf.sharedResources()
     repos = resources.repositories()
@@ -134,19 +134,18 @@ def get_omero_paths(client):
 
     # if the repo paths could not be identify, check custom configurations
     # from config of omero
+    svc = client.sf.getConfigService()
     if not managed_repo_dir:
-        managed_repo_dir = client.sf.getConfigService().getConfigValue(
-            "omero.managed.dir"
-        )
+        managed_repo_dir = svc.getConfigValue("omero.managed.dir")
     if not orig_repo_dir:
-        orig_repo_dir = client.sf.getConfigService().getConfigValue("omero.data.dir")
+        orig_repo_dir = svc.getConfigValue("omero.data.dir")
 
     # catching empty paths
     if not managed_repo_dir:
         print(
             "ERROR: no specification was found for managed repository path. "
-            "Please check path of type Managed under \n >>omero fs repos \n or the "
-            "value of omero.managed.dir under\n >>omero config get"
+            "Please check path of type Managed under \n >>omero fs repos \n "
+            "or the value of omero.managed.dir under\n >>omero config get"
         )
         setError()
         return None, None
@@ -154,8 +153,8 @@ def get_omero_paths(client):
     if not orig_repo_dir:
         print(
             "ERROR: no specification was found for omero repository path. "
-            "Please check path of type Public under \n >>omero fs repos \n or the "
-            "value of omero.data.dir under\n >>omero config get"
+            "Please check path of type Public under \n >>omero fs repos \n "
+            "or the value of omero.data.dir under\n >>omero config get"
         )
         setError()
         return None, None
@@ -331,9 +330,9 @@ def createObjectDir(ppath, object, name):
             os.mkdir(path)
             addToDictContent(path, object.getId())
             return path
-        except:
+        except Exception:
             print(
-                "ERROR: Cannot create directory for ID:%s: %s in %s (possible problems:length of name, or name contains special char)"
+                "ERROR: Cannot create directory for ID:%s: %s in %s (possible problems:length of name, or name contains special char)"  # noqa
                 % (object.getId(), name, ppath)
             )
             setError()
@@ -448,7 +447,7 @@ def replace_special_char(name):
     replaced_name = re.sub(NON_VALID_CHAR, "_", name)
     message = None
     if replaced_name != name:
-        message = "# WARNING: replaced char : [%s] -> [%s]" % (name, replaced_name)
+        message = "# WARNING: replaced char : [%s] -> [%s]" % (name, replaced_name)  # noqa
         setWarning()
     return replaced_name, message
 
@@ -554,7 +553,8 @@ def createSymlinks(linkNames, linkTarget):
             try:
                 # if src path is a symlink (for inplace imported data)
                 if os.path.islink(src):
-                    # use string representing the path to which the symbolic link points
+                    # use string representing the path
+                    # to which the symbolic link points
                     src = os.readlink(src)
 
                 os.symlink(src, dest)
@@ -579,19 +579,20 @@ def addAttachment(obj, tdir):
                     ann.getFile().getName(),
                 )
                 # TODO: link - if file still exists - skip
-                carg = "find %s -name %s" % (ORIGINAL_REP, ann.getFile().getId())
+                file = ann.getFile()
+                carg = "find %s -name %s" % (ORIGINAL_REP, file.getId())
                 paths = [
                     line[0:]
-                    for line in subprocess.check_output(carg, shell=True).splitlines()
+                    for line in subprocess.check_output(carg, shell=True).splitlines()  # noqa
                 ]
                 if len(paths) > 1:
                     print(
-                        "# WARNING: file annotation target is not unique: %s --> use first match"
+                        "# WARNING: file annotation target is not unique: %s --> use first match"   # noqa
                         % ("\n".join(paths))
                     )
                     setWarning()
                 linkNames = []
-                linkNames.append(os.path.join(tdir, ann.getFile().getName()))
+                linkNames.append(os.path.join(tdir, file.getName()))
                 linkTarget = []
                 linkTarget.append(str(paths[0].decode("utf-8")))
                 createSymlinks(linkNames, linkTarget)
@@ -599,42 +600,46 @@ def addAttachment(obj, tdir):
 
 def addToNotifyList(user, image_ID):
     """
-    Validate user mail and add image id as well email to list of user that get a notification mail.
+    Validate user mail and add image id as well email to
+    list of user that get a notification mail.
     Args:
         user: user object
         image_ID: image id
     """
-    userID = user.getId()  # Initialises also the proxy object for simpleMarshal
+    # Initialises also the proxy object for simpleMarshal
+    user_ID = user.getId()
     dic = user.simpleMarshal()
     if "email" in dic and dic["email"]:
-        userEmail = dic["email"]
+        user_email = dic["email"]
     else:
         print("No mail is given for user %s" % user.getName())
         return
 
-    image_url = "http://omero.cellnanos.uni-osnabrueck.de/webclient/?show=image-" + str(
-        image_ID
-    )
+    # TO BE MOVED
+    url = "http://omero.cellnanos.uni-osnabrueck.de/webclient/?show=image-"
+    image_url = url + str(image_ID)
 
     # Validate with a regular expression. Not perfect but it will do
-    match = re.match("^[a-zA-Z0-9._%-]+@[a-zA-Z0-9._%-]+.[a-zA-Z]{2,6}$", userEmail)
+    pattern = "^[a-zA-Z0-9._%-]+@[a-zA-Z0-9._%-]+.[a-zA-Z]{2,6}$"
+    match = re.match(pattern, user_email)
     if match:
         global NOTIFICATION_LIST
         if len(NOTIFICATION_LIST) == 0:
-            NOTIFICATION_LIST = {userID: {"images": [image_url], "email": userEmail}}
+            NOTIFICATION_LIST = {user_ID: {"images": [image_url],
+                                           "email": user_email}}
         else:
             # user available?
-            if userID in NOTIFICATION_LIST and NOTIFICATION_LIST[userID]:
-                if NOTIFICATION_LIST[userID]["images"]:
-                    NOTIFICATION_LIST[userID]["images"].append(image_url)
+            if user_ID in NOTIFICATION_LIST and NOTIFICATION_LIST[user_ID]:
+                if NOTIFICATION_LIST[user_ID]["images"]:
+                    NOTIFICATION_LIST[user_ID]["images"].append(image_url)
                 else:
-                    NOTIFICATION_LIST[userID] = {
+                    NOTIFICATION_LIST[user_ID] = {
                         "images": [image_url],
-                        "email": userEmail,
+                        "email": user_email,
                     }
             else:
                 NOTIFICATION_LIST.update(
-                    {userID: {"images": [image_url], "email": userEmail}}
+                    {user_ID: {"images": [image_url], "email": user_email}}
                 )
 
 
@@ -642,9 +647,11 @@ def get_owner_of_data(image):
     return image.getDetails().getOwner()
 
 
-def addImages(conn, slot, images, user, addAttachments, allowedToShare, targetDir=None):
+def addImages(conn, slot, images, user, addAttachments,
+              allowedToShare, targetDir=None):
     """
-    Check if parent dir (dataset) exists (and create one if not) and afterwards calls createObjectDir for given image objects
+    Check if parent dir (dataset) exists (and create one if not)
+    and afterwards calls createObjectDir for given image objects
     Args:
         conn: BlitzGateway connection
         slot: path to access area
@@ -692,7 +699,8 @@ def addImages(conn, slot, images, user, addAttachments, allowedToShare, targetDi
                     )
 
                     linkNames, linkTarget = checkLinks(
-                        src, targetDir, src_fName, linkNames, linkTarget, image.id
+                        src, targetDir, src_fName, linkNames, linkTarget,
+                        image.id
                     )
 
                 # if data owned by others - owner of this data should be notify
@@ -707,7 +715,7 @@ def addImages(conn, slot, images, user, addAttachments, allowedToShare, targetDi
                 addAttachment(image, targetDir)
         else:
             print(
-                f"# WARNING: You are not allowed to share image: {image.getId()}. (ownership: {user_is_owner}, group permission: {allowedToShare})"
+                f"# WARNING: You are not allowed to share image: {image.getId()}. (ownership: {user_is_owner}, group permission: {allowedToShare})"  # noqa
             )
             setWarning()
 
@@ -720,7 +728,8 @@ def addDatasets(
 ):
     """
     TODO: doubled with addPath?
-    Check if parent project dir exists (and create one if not) and afterwards calls createObjectDir for given dataset objects
+    Check if parent project dir exists (and create one if not) and
+    afterwards calls createObjectDir for given dataset objects
     and add images
     Args:
       conn: BlitzGateway connection
@@ -736,7 +745,8 @@ def addDatasets(
         if not targetDir:
             projectObj = dataset.getParent()
             if projectObj is not None:
-                linkDir = createObjectDir(slot, projectObj, projectObj.getName())
+                linkDir = createObjectDir(slot, projectObj,
+                                          projectObj.getName())
             else:
                 linkDir = slot
         else:
@@ -788,10 +798,12 @@ def addProjects(conn, slot, projects, user, addAttachments, allowedToShare):
             )
 
 
-def addPlates(conn, slot, plates, user, addAttachments, allowedToShare, targetDir=None):
+def addPlates(conn, slot, plates, user, addAttachments,
+              allowedToShare, targetDir=None):
     """
     TODO: doubled with addPath?
-    Check if parent screen dir exists (and create one if not) and afterwards calls createObjectDir for given plates objects
+    Check if parent screen dir exists (and create one if not)
+    and afterwards calls createObjectDir for given plates objects
     and add images
     Args:
       conn: BlitzGateway connection
@@ -825,7 +837,8 @@ def addPlates(conn, slot, plates, user, addAttachments, allowedToShare, targetDi
                 for index in range(0, index):
                     imageList.append(well.getImage(index))
             addImages(
-                conn, slot, imageList, user, addAttachments, allowedToShare, linkDir
+                conn, slot, imageList, user, addAttachments,
+                allowedToShare, linkDir
             )
 
 
@@ -866,31 +879,29 @@ def getRandomString(n):
     return res
 
 
-def generateHashName(user, n, accessAreaName):
+def generateHashName(user, n, access_area_name):
     """
-    Generate name for access area like "rn_<randomNumber>_<userID>_<userSpecificAreaName>"
+    Generate name for access area like
+    "rn_<randomNumber>_<userID>_<userSpecificAreaName>"
     Args:
         user: user object
         n: lenght of random number
         accessAreaName: access area name specified by user
     Returns:
-        hashname: string like "rn_<randomNumber>_<userID>_<userSpecificAreaName>"
+        hashname: string like "rn_<randomNumber>_<userID>_<userSpecificAreaName>"  # noqa
     """
 
-    hashName = "%s_%s_%s_%s" % ("rn", getRandomString(n), user.getId(), accessAreaName)
-    return hashName
+    return "%s_%s_%s_%s" % ("rn", getRandomString(n), user.getId(), access_area_name)  # noqa
 
 
 def createDefaultAreaName():
     """
     Return default name for an area.
     Returns:
-        timeStr: current date and time as string in the format: %Y-%m-%d_%H-%M-%S
+        timeStr: current date and time as string in the format: %Y-%m-%d_%H-%M-%S  # noqa
     """
     date = datetime.datetime.now()
-    timeStr = date.strftime("%Y-%m-%d_%H-%M-%S")
-
-    return timeStr
+    return date.strftime("%Y-%m-%d_%H-%M-%S")
 
 
 def generateNewArea(user, name):
@@ -899,19 +910,19 @@ def generateNewArea(user, name):
         user: user object
         name: access area name specified by user
     Returns:
-        pathToArea: path to area
-        hashName: whole name of area directory
+        path_to_area: path to area
+        hash_name: whole name of area directory
     """
 
-    hashName = generateHashName(user, LENGTH_HASH, name)
+    hash_name = generateHashName(user, LENGTH_HASH, name)
 
-    while os.path.exists(os.path.join(OPENLINK_DIR, hashName)):
-        hashName = generateHashName(user, LENGTH_HASH, name)
+    while os.path.exists(os.path.join(OPENLINK_DIR, hash_name)):
+        hash_name = generateHashName(user, LENGTH_HASH, name)
 
-    pathToArea = os.path.join(OPENLINK_DIR, hashName)
-    os.mkdir(pathToArea)
+    path_to_area = os.path.join(OPENLINK_DIR, hash_name)
+    os.mkdir(path_to_area)
 
-    return pathToArea, hashName
+    return path_to_area, hash_name
 
 
 def email_results(conn, imageIDs, email, smtpObj):
@@ -962,12 +973,13 @@ def notifyMembers(conn):
             print("# INFO: Send Notification to %s" % value["email"])
             email_results(conn, value["images"], value["email"], smtpObj)
         smtpObj.quit()
-        print("# INFO: Notification via mail took %.2f seconds" % (time.time() - start))
+        print("# INFO: Notification via mail took %.2f seconds" % (time.time() - start))  # noqa
 
 
 def addObjToArea(conn, params, existingAreasNames=None, paths=None):
     """
-    add selected object and its content to a slot on OPENLINK_DIR as link to sources on ManagedRepository
+    add selected object and its content to a slot on OPENLINK_DIR
+    as link to sources on ManagedRepository
 
     Args:
         conn: current user connection
@@ -996,7 +1008,8 @@ def addObjToArea(conn, params, existingAreasNames=None, paths=None):
 
     destObjs = None
     if params.get(PARAM_ID) is not None:
-        destObjs = conn.getObjects(params.get(PARAM_DATATYPE), params.get(PARAM_ID))
+        destObjs = conn.getObjects(params.get(PARAM_DATATYPE),
+                                   params.get(PARAM_ID))
         destType = params.get(PARAM_DATATYPE)
 
     # parse json with object ids available in this area to dict
@@ -1010,7 +1023,7 @@ def addObjToArea(conn, params, existingAreasNames=None, paths=None):
         setError()
         return (
             None,
-            "ERROR: Can't identify selected object. Please select Projects, Datasets or Images",
+            "ERROR: Can't identify selected object. Please select Projects, Datasets or Images",  # noqa
         )
     elif destType == "Project":
         addProjects(
@@ -1066,7 +1079,7 @@ def addObjToArea(conn, params, existingAreasNames=None, paths=None):
     print("\n-----------------------------------------------------\n")
     print("URL: \n%s\n" % url)
     print(
-        "Batch download: copy the following line between the hashes into your cmd:\n### "
+        "Batch download: copy the following line between the hashes into your cmd:\n### "  # noqa
     )
     print(cmd)
     print("###\n")
@@ -1123,13 +1136,15 @@ def getAreasOfUser(id):
 
 def getExistingAreas(conn):
     """
-    get all slots for current user (OPENLINK_DIR/rn_<RN>_<userid>_<accessAreaName>/;
+    get all slots for current user
+    (OPENLINK_DIR/rn_<RN>_<userid>_<accessAreaName>/;
     Args:
         conn: connection of calling user
     Returns:
-        values : list of description of slots; one slot is described like "<areaName> [created <date>]"; if no slot
-                    available it returns ['No OpenLinks available for <userName>]
-        paths : list of path to slots
+        values: list of description of slots; one slot is described
+                like "<areaName> [created <date>]"; if no slot
+                available it returns ['No OpenLinks available for <userName>]
+        paths: list of path to slots
     """
     values = None
     try:
@@ -1193,10 +1208,19 @@ def run_script():
 
     client = scripts.client(
         "Create_OpenLink.py",
-        """Add selected objects and all subordinate objects to a new or existing OpenLink area. After the creation of the OpenLink section is completed, you will find a link under the right tab OpenLink after a REFRESH of your omero.web content.
+        """
+        Add selected objects and all subordinate objects
+        to a new or existing OpenLink area.
+        After the creation of the OpenLink section is
+        completed, you will find a link under
+        the right tab OpenLink
+        after a REFRESH of your omero.web content.
 
         *** NOTE: ***
-        You can only add data that belongs to you to your OpenLink area OR as group owner of a NON-PRIVATE group you can also use data from other members (the owner of the data will be notify by mail).        
+        You can only add data that belongs to you to
+        your OpenLink area OR as group owner of a NON-PRIVATE
+        group you can also use data from other members
+        (the owner of the data will be notify by mail).
         """,
         scripts.String(
             PARAM_DATATYPE,
@@ -1215,7 +1239,7 @@ def run_script():
             PARAM_SLOT_NAME,
             optional=True,
             grouping="3",
-            description="Create new OpenLink area with given name. If nothing is specified, the current date is used.",
+            description="Create new OpenLink area with given name. If nothing is specified, the current date is used.",  # noqa
         ),
         scripts.Bool(
             PARAM_ADD_TO_SLOT,
@@ -1233,7 +1257,7 @@ def run_script():
         scripts.Bool(
             PARAM_ATTACH,
             grouping="5",
-            description="Link all file attachments of selected and subordinate objects",
+            description="Link all file attachments of selected and subordinate objects",  # noqa
             default=True,
         ),
         namespaces=[omero.constants.namespaces.NSDYNAMIC],
@@ -1259,8 +1283,7 @@ def run_script():
                 ORIGINAL_REP = orep
             # call main script, return the dest project
             message = addObjToArea(conn, params, existingAreaNames, paths)
-            # message = "Create OpenLink under \n%s\n After reload you can find URL and batch download command listed under OpenLink in the right hand pane"%message
-            message = "After reload you can find URL and batch download command listed under OpenLink in the right hand pane"
+            message = "After reload you can find URL and batch download command listed under OpenLink in the right hand pane"  # noqa
 
             hints = []
             if WARNINGS:
@@ -1277,7 +1300,8 @@ def run_script():
             client.setOutput("Message", rstring(message))
         else:
             client.setOutput(
-                "ERROR", rstring("No such OpenLink directory: %s" % OPENLINK_DIR)
+                "ERROR",
+                rstring("No such OpenLink directory: %s" % OPENLINK_DIR)
             )
     finally:
         client.closeSession()
