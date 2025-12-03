@@ -50,7 +50,7 @@ def debugoutput(request, conn=None, **kwargs):
     # data.append({",".join([str(elem) for elem in dircontent])})
     try:
         user = conn.getUser()
-        slot_parent_dir = getAreasOfUser(str(user.getId()))
+        slot_parent_dir = get_areas_of_user(str(user.getId()))
         if slot_parent_dir is not None:
             data.append({
                 "Current User ID": str(user.getId()),
@@ -58,7 +58,7 @@ def debugoutput(request, conn=None, **kwargs):
             })
 
             for p in slot_parent_dir:
-                area_name = parseAccessAreaNames(os.path.basename(p))
+                area_name = parse_access_area_names(os.path.basename(p))
                 data.append({
                     "SLOT user path": p,
                     "SLOT user name": area_name
@@ -71,7 +71,7 @@ def debugoutput(request, conn=None, **kwargs):
     return JsonResponse(data, safe=False)
 
 
-def parseAccessAreaNames(p):
+def parse_access_area_names(p):
     try:
         name = re.search(GET_SLOTNAME_PATTERN, p).group(1)
     except AttributeError:
@@ -80,7 +80,7 @@ def parseAccessAreaNames(p):
     return name
 
 
-def getAreasOfUser(id):
+def get_areas_of_user(id):
     """
     Scan ACCESS_AREA directories, filter out userID from directory name
     :param id: user id in OMERO
@@ -122,12 +122,12 @@ def openlink(request, conn=None, **kwargs):
     debug = ""
     try:
         user = conn.getUser()
-        slot_parent_dir = getAreasOfUser(str(user.getId()))
+        slot_parent_dir = get_areas_of_user(str(user.getId()))
 
         if slot_parent_dir is not None:
             for p in slot_parent_dir:
                 debug = "%s...[%s]..." % (debug, p)
-                area_name = parseAccessAreaNames(os.path.basename(p))
+                area_name = parse_access_area_names(os.path.basename(p))
                 if area_name is not None:
                     timestamp = os.path.getctime(p)
                     dt = datetime.datetime.fromtimestamp(timestamp)
