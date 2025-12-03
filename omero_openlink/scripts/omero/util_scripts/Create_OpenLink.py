@@ -209,7 +209,7 @@ def addToCurlFile(base, hash_name):
     file_list = get_file_paths(base, [])
     access_area_name = parseAreaNames(hash_name)
     try:
-        tFile = open(curl_file, "w")
+        t_file = open(curl_file, "w")
         for file in file_list:
             if os.path.basename(file) == os.path.basename(content_file):
                 continue
@@ -232,11 +232,11 @@ def addToCurlFile(base, hash_name):
                     hash_name.replace(" ", "%20"),
                     relpath.replace(" ", "%20"),
                 )
-                tFile.write(entry)
-                tFile.write("\n")
-        tFile.flush()
+                t_file.write(entry)
+                t_file.write("\n")
+        t_file.flush()
     finally:
-        tFile.close()
+        t_file.close()
 
 
 # get location of sources in managed rep
@@ -397,7 +397,7 @@ def userIsFullAdmin(conn):
         return True
 
 
-def groupAllowedToShareData(conn, user_ID):
+def groupAllowedToShareData(conn, user_id):
     """
     Return true if the current group is read-annotate or (if the user is owner
     of the group and the group is not private)
@@ -432,7 +432,7 @@ def groupAllowedToShareData(conn, user_ID):
     # user is owner of this group?
     owners, members = group.groupSummary()
     for own in owners:
-        if user_ID == own.getId():
+        if user_id == own.getId():
             return True
 
     return False
@@ -595,16 +595,16 @@ def addAttachment(obj, tdir):
                 createSymlinks(link_names, link_target)
 
 
-def addToNotifyList(user, image_ID):
+def addToNotifyList(user, image_id):
     """
     Validate user mail and add image id as well email to
     list of user that get a notification mail.
     Args:
         user: user object
-        image_ID: image id
+        image_id: image id
     """
     # Initialises also the proxy object for simpleMarshal
-    user_ID = user.getId()
+    user_id = user.getId()
     dic = user.simpleMarshal()
     if "email" in dic and dic["email"]:
         user_email = dic["email"]
@@ -614,7 +614,7 @@ def addToNotifyList(user, image_ID):
 
     # TO BE MOVED
     url = "http://omero.cellnanos.uni-osnabrueck.de/webclient/?show=image-"
-    image_url = url + str(image_ID)
+    image_url = url + str(image_id)
 
     # Validate with a regular expression. Not perfect but it will do
     pattern = "^[a-zA-Z0-9._%-]+@[a-zA-Z0-9._%-]+.[a-zA-Z]{2,6}$"
@@ -622,21 +622,21 @@ def addToNotifyList(user, image_ID):
     if match:
         global NOTIFICATION_LIST
         if len(NOTIFICATION_LIST) == 0:
-            NOTIFICATION_LIST = {user_ID: {"images": [image_url],
+            NOTIFICATION_LIST = {user_id: {"images": [image_url],
                                            "email": user_email}}
         else:
             # user available?
-            if user_ID in NOTIFICATION_LIST and NOTIFICATION_LIST[user_ID]:
-                if NOTIFICATION_LIST[user_ID]["images"]:
-                    NOTIFICATION_LIST[user_ID]["images"].append(image_url)
+            if user_id in NOTIFICATION_LIST and NOTIFICATION_LIST[user_id]:
+                if NOTIFICATION_LIST[user_id]["images"]:
+                    NOTIFICATION_LIST[user_id]["images"].append(image_url)
                 else:
-                    NOTIFICATION_LIST[user_ID] = {
+                    NOTIFICATION_LIST[user_id] = {
                         "images": [image_url],
                         "email": user_email,
                     }
             else:
                 NOTIFICATION_LIST.update(
-                    {user_ID: {"images": [image_url], "email": user_email}}
+                    {user_id: {"images": [image_url], "email": user_email}}
                 )
 
 
@@ -678,13 +678,13 @@ def addImages(conn, slot, images, user, add_attachments,
                 if not target_dir:
                     continue
 
-            src_filesetPath, src_fName = getFilesetPath(conn, image.id)
+            src_fileset_path, src_fname = getFilesetPath(conn, image.id)
 
             # add tp linkNames and linkTarget list
-            if src_filesetPath:
+            if src_fileset_path:
                 if image.countFilesetFiles() > 1:
                     name, extension = os.path.splitext(image.getName())
-                    src = os.path.join(MANAGED_REP, src_filesetPath)
+                    src = os.path.join(MANAGED_REP, src_fileset_path)
 
                     link_names, link_target = checkLinks(
                         src, target_dir, name, link_names,
@@ -693,11 +693,11 @@ def addImages(conn, slot, images, user, add_attachments,
 
                 else:
                     src = os.path.join(
-                        os.path.join(MANAGED_REP, src_filesetPath), src_fName
+                        os.path.join(MANAGED_REP, src_fileset_path), src_fname
                     )
 
                     link_names, link_target = checkLinks(
-                        src, target_dir, src_fName, link_names, link_target,
+                        src, target_dir, src_fname, link_names, link_target,
                         image.id
                     )
 
@@ -924,15 +924,15 @@ def generateNewArea(user, name):
     return path_to_area, hash_name
 
 
-def email_results(conn, image_IDs, email, smtp_obj):
+def email_results(conn, image_ids, email, smtp_obj):
     """
     E-mail the result to the user.
 
     Args:
         conn:    The BlitzGateway connection
-        imageIDs: ID's of data that was shared
+        image_ids: ID's of data that was shared
         email: email address of receiver
-        smtpObj:
+        smtp_obj:
     """
     shared_name = conn.getUser().getFullName()
     msg = MIMEMultipart()
@@ -949,7 +949,7 @@ def email_results(conn, image_IDs, email, smtp_obj):
     %s
 
     """
-            % (shared_name, "\n".join(str(v) for v in image_IDs))
+            % (shared_name, "\n".join(str(v) for v in image_ids))
         )
     )
     smtp_obj.sendmail(ADMIN_EMAIL, [email], msg.as_string())
