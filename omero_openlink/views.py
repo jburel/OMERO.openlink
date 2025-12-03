@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse
+from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 from django.template.defaultfilters import filesizeformat
 
 
-from omeroweb.webclient.decorators import login_required, render_response
+from omeroweb.webclient.decorators import login_required
 
 import logging
 import sys
@@ -19,15 +19,6 @@ from operator import itemgetter
 from . import openlink_settings
 
 logger = logging.getLogger(__name__)
-
-try:
-    from PIL import Image
-except ImportError:
-    try:
-        import Image
-    except ImportError:
-        logger.error('No Pillow installed,\
-            line plots and split channel will fail!')
 
 OPENLINK_DIR = openlink_settings.OPENLINK_DIR.rstrip("/")
 TYPE_HTTP = openlink_settings.TYPE_HTTP
@@ -59,18 +50,18 @@ def debugoutput(request, conn=None, **kwargs):
     # data.append({",".join([str(elem) for elem in dircontent])})
     try:
         user = conn.getUser()
-        slotParentDir = getAreasOfUser(str(user.getId()))
-        if slotParentDir is not None:
+        slot_parent_dir = getAreasOfUser(str(user.getId()))
+        if slot_parent_dir is not None:
             data.append({
                 "Current User ID": str(user.getId()),
                 "Current User Name": user.getName()
             })
 
-            for p in slotParentDir:
-                areaName = parseAccessAreaNames(os.path.basename(p))
+            for p in slot_parent_dir:
+                area_name = parseAccessAreaNames(os.path.basename(p))
                 data.append({
                     "SLOT user path": p,
-                    "SLOT user name": areaName
+                    "SLOT user name": area_name
                 })
     except Exception as e:
         exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -131,13 +122,13 @@ def openlink(request, conn=None, **kwargs):
     debug = ""
     try:
         user = conn.getUser()
-        slotParentDir = getAreasOfUser(str(user.getId()))
+        slot_parent_dir = getAreasOfUser(str(user.getId()))
 
-        if slotParentDir is not None:
-            for p in slotParentDir:
+        if slot_parent_dir is not None:
+            for p in slot_parent_dir:
                 debug = "%s...[%s]..." % (debug, p)
-                areaName = parseAccessAreaNames(os.path.basename(p))
-                if areaName is not None:
+                area_name = parseAccessAreaNames(os.path.basename(p))
+                if area_name is not None:
                     timestamp = os.path.getctime(p)
                     dt = datetime.datetime.fromtimestamp(timestamp)
                     # Convert it to an aware datetime object in UTC time.
@@ -145,8 +136,8 @@ def openlink(request, conn=None, **kwargs):
                     # Convert it to your local timezone (still aware)
                     dt = dt.astimezone()
                     # Print it with a directive of choice
-                    thisDate = dt.strftime("%d %b %Y (%I:%M:%S %p)")
-                    data = {'date': thisDate, 'area': areaName,
+                    this_date = dt.strftime("%d %b %Y (%I:%M:%S %p)")
+                    data = {'date': this_date, 'area': area_name,
                             'timestamp': timestamp,
                             'hashname': os.path.basename(p),
                             'url': f"{SERVER_NAME}/{os.path.basename(p)}/",
@@ -155,7 +146,7 @@ def openlink(request, conn=None, **kwargs):
                                 os.path.basename(p).replace(" ", "%20"),
                                 CURL_FILE),
                             'size': filesizeformat(get_area_size(p))
-                          }
+                            }
                     values.append(data)
     except Exception as e:
         exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -173,10 +164,10 @@ def openlink(request, conn=None, **kwargs):
 def delete(request, conn=None, **kwargs):
     if request.method == "POST":
         hashname = request.POST.get('hashname_id')
-        myPath = '%s/%s' % (OPENLINK_DIR, hashname)
-        if os.path.exists(myPath):
+        my_path = '%s/%s' % (OPENLINK_DIR, hashname)
+        if os.path.exists(my_path):
             try:
-                shutil.rmtree(myPath)
+                shutil.rmtree(my_path)
             except OSError as e:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 print('ERROR: while delete openlink area: %s\n ' % (str(e)))
