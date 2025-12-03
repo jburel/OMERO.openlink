@@ -97,12 +97,12 @@ NOTIFICATION_LIST = {}
 # -------------------------------------------------------------------
 
 
-def setWarning():
+def set_warning():
     global WARNINGS
     WARNINGS = True
 
 
-def setError():
+def set_error():
     global ERRORS
     ERRORS = True
 
@@ -147,7 +147,7 @@ def get_omero_paths(client):
             "Please check path of type Managed under \n >>omero fs repos \n "
             "or the value of omero.managed.dir under\n >>omero config get"
         )
-        setError()
+        set_error()
         return None, None
 
     if not orig_repo_dir:
@@ -156,7 +156,7 @@ def get_omero_paths(client):
             "Please check path of type Public under \n >>omero fs repos \n "
             "or the value of omero.data.dir under\n >>omero config get"
         )
-        setError()
+        set_error()
         return None, None
 
     # Ensure paths end with a slash
@@ -197,7 +197,7 @@ def get_file_paths(directory, file_paths):
     return file_paths
 
 
-def addToCurlFile(base, hash_name):
+def add_to_curl_file(base, hash_name):
     """
     Args:
         base: absolute path to openlink area
@@ -207,7 +207,7 @@ def addToCurlFile(base, hash_name):
     curl_file = os.path.join(base, CURL_FILE)
     content_file = os.path.join(base, CONTENT_FILE)
     file_list = get_file_paths(base, [])
-    access_area_name = parseAreaNames(hash_name)
+    access_area_name = parse_area_names(hash_name)
     try:
         t_file = open(curl_file, "w")
         for file in file_list:
@@ -221,7 +221,7 @@ def addToCurlFile(base, hash_name):
                         "WARNING: pathlength is in the critical range! This "
                         "could generate download issues for %s" % relpath
                     )
-                    setWarning()
+                    set_warning()
 
                 # replace whitespaces
                 entry = CURL_PATTERN % (
@@ -241,7 +241,7 @@ def addToCurlFile(base, hash_name):
 
 # get location of sources in managed rep
 # TODO: filenames with special characters makes problems
-def getOriginalFile(image_obj):
+def get_original_file(image_obj):
     """Get location of sources in managed rep.
     Args:
         image_obj: image object
@@ -253,18 +253,18 @@ def getOriginalFile(image_obj):
 
     for orig_file in fileset.listFiles():
         name = orig_file.getName()
-        path = orig_file.getPath()
+        path = orig_file.get_path()
 
     return path, name
 
 
-def writeDictContent(path):
+def write_dict_content(path):
     global CONTENT_DICT
     with open(path, 'w') as f:
         json.dump(CONTENT_DICT, f)
 
 
-def loadDictContent(path):
+def load_dict_content(path):
     global CONTENT_DICT
     if os.path.exists(path):
         with open(path, 'r') as f:
@@ -274,7 +274,7 @@ def loadDictContent(path):
         CONTENT_DICT = {}
 
 
-def existsInDictContent(path, id):
+def exists_in_dict_content(path, id):
     global CONTENT_DICT
     if not CONTENT_DICT:
         return False
@@ -284,7 +284,7 @@ def existsInDictContent(path, id):
     return False
 
 
-def getContentFromDictById(id):
+def get_content_from_dict_by_id(id):
     global CONTENT_DICT
     if not CONTENT_DICT:
         return False
@@ -293,12 +293,12 @@ def getContentFromDictById(id):
     return paths
 
 
-def addToDictContent(path, id):
+def add_to_dict_content(path, id):
     global CONTENT_DICT
     CONTENT_DICT.update({path: id})
 
 
-def createObjectDir(ppath, object, name):
+def create_object_dir(ppath, object, name):
     """
     Create new directory of <name> in <ppath> and add this path and the
     object id to global dict CONTENT_DICT .
@@ -325,30 +325,30 @@ def createObjectDir(ppath, object, name):
     if not os.path.exists(path):
         try:
             os.mkdir(path)
-            addToDictContent(path, object.getId())
+            add_to_dict_content(path, object.getId())
             return path
         except Exception:
             print(
                 "ERROR: Cannot create directory for ID:%s: %s in %s (possible problems:length of name, or name contains special char)"  # noqa
                 % (object.getId(), name, ppath)
             )
-            setError()
+            set_error()
             return None
     else:
         # check if existing object is the same
-        if not existsInDictContent(path, object.getId()):
+        if not exists_in_dict_content(path, object.getId()):
             # check if there is another name for this object
-            existing_paths = getContentFromDictById(object.getId())
+            existing_paths = get_content_from_dict_by_id(object.getId())
             if len(existing_paths) == 0:
                 # create alternativ name (append id)
                 alter_dir_name = "%s_%s" % (object.getName(), object.getId())
-                return createObjectDir(ppath, object, alter_dir_name)
+                return create_object_dir(ppath, object, alter_dir_name)
             else:
                 return existing_paths[0]
     return path
 
 
-def getPath(image, slot):
+def get_path(image, slot):
     """
     Generate directory structure like in omero (project/dataset/) for given
     <image> in directory <slot> if it not exist.
@@ -360,21 +360,21 @@ def getPath(image, slot):
     link_dir = slot
 
     if project_obj is not None:
-        link_dir = createObjectDir(link_dir, project_obj,
-                                   project_obj.getName())
+        link_dir = create_object_dir(link_dir, project_obj,
+                                     project_obj.getName())
 
     if link_dir is not None:
-        link_dir = createObjectDir(link_dir, dataset_obj,
-                                   dataset_obj.getName())
+        link_dir = create_object_dir(link_dir, dataset_obj,
+                                     dataset_obj.getName())
 
     if link_dir is None:
         print("ERROR: can't create Project directory for ", image.getName())
-        setError()
+        set_error()
 
     return link_dir
 
 
-def userIsOwner(conn, user_name, id):
+def user_is_owner(conn, user_name, id):
     """
     Check if owner of the image == calling user.
     Args:
@@ -388,7 +388,7 @@ def userIsOwner(conn, user_name, id):
     return image.getOwnerOmeName() == user_name
 
 
-def userIsFullAdmin(conn):
+def user_is_full_admin(conn):
     # Check if you are an full administrator
 
     if not conn.isFullAdmin():
@@ -397,7 +397,7 @@ def userIsFullAdmin(conn):
         return True
 
 
-def groupAllowedToShareData(conn, user_id):
+def group_allowed_to_share_data(conn, user_id):
     """
     Return true if the current group is read-annotate or (if the user is owner
     of the group and the group is not private)
@@ -445,7 +445,7 @@ def replace_special_char(name):
     message = None
     if replaced_name != name:
         message = "# WARNING: replaced char : [%s] -> [%s]" % (name, replaced_name)  # noqa
-        setWarning()
+        set_warning()
     return replaced_name, message
 
 
@@ -465,7 +465,7 @@ def replace_special_char_in_tokens(name):
     return replaced_name
 
 
-def getFilesetPath(conn, id):
+def get_fileset_path(conn, id):
     """
     Return path to the fileset of given image
 
@@ -484,10 +484,10 @@ def getFilesetPath(conn, id):
     if file_count > 0:
         if file_count > 1:
             for orig_file in image.getImportedImageFiles():
-                path = orig_file.getPath()
+                path = orig_file.get_path()
                 file_paths.append(path)
         else:
-            path, f_name = getOriginalFile(image)
+            path, f_name = get_original_file(image)
             file_paths.append(path)
 
     fileset_path = os.path.commonprefix(file_paths)
@@ -495,7 +495,7 @@ def getFilesetPath(conn, id):
     return fileset_path, f_name
 
 
-def checkLinks(target, dir, name, link_names, link_targets, id):
+def check_links(target, dir, name, link_names, link_targets, id):
     """
      Decide if symlink and target will be added to the lists of names and
      targets, or change symlink name if necessary
@@ -523,7 +523,7 @@ def checkLinks(target, dir, name, link_names, link_targets, id):
             f_name, extension = os.path.splitext(name)
             name = "%s_%s%s" % (f_name, id, extension)
             print("# INFO: rename : %s [new: %s]" % (f_name, name))
-            link_names, link_target = checkLinks(
+            link_names, link_target = check_links(
                 target, dir, name, link_names, link_targets, id
             )
     else:  # link to target still exists
@@ -537,7 +537,7 @@ def checkLinks(target, dir, name, link_names, link_targets, id):
     return link_names, link_targets
 
 
-def createSymlinks(link_names, link_target):
+def create_symlinks(link_names, link_target):
     """
     Create symlink on the system if not exists.
     Args:
@@ -559,7 +559,7 @@ def createSymlinks(link_names, link_target):
                 print("# INFO: skip:: Link still exists: ", src)
 
 
-def addAttachment(obj, tdir):
+def add_attachment(obj, tdir):
     """
     Args:
         obj: object with attachments
@@ -587,15 +587,15 @@ def addAttachment(obj, tdir):
                         "# WARNING: file annotation target is not unique: %s --> use first match"   # noqa
                         % ("\n".join(paths))
                     )
-                    setWarning()
+                    set_warning()
                 link_names = []
                 link_names.append(os.path.join(tdir, file.getName()))
                 link_target = []
                 link_target.append(str(paths[0].decode("utf-8")))
-                createSymlinks(link_names, link_target)
+                create_symlinks(link_names, link_target)
 
 
-def addToNotifyList(user, image_id):
+def add_to_notify_list(user, image_id):
     """
     Validate user mail and add image id as well email to
     list of user that get a notification mail.
@@ -644,11 +644,11 @@ def get_owner_of_data(image):
     return image.getDetails().getOwner()
 
 
-def addImages(conn, slot, images, user, add_attachments,
-              allowed_to_share, target_dir=None):
+def add_images(conn, slot, images, user, add_attachments,
+               allowed_to_share, target_dir=None):
     """
     Check if parent dir (dataset) exists (and create one if not)
-    and afterwards calls createObjectDir for given image objects
+    and afterwards calls create_object_dir for given image objects
     Args:
         conn: BlitzGateway connection
         slot: path to access area
@@ -665,20 +665,20 @@ def addImages(conn, slot, images, user, add_attachments,
 
     # proof images
     for image in images:
-        user_is_owner = userIsOwner(conn, user_name, image.id)
-        user_is_fulladmin = userIsFullAdmin(conn)
+        is_owner = user_is_owner(conn, user_name, image.id)
+        is_fulladmin = user_is_full_admin(conn)
         # share data
-        share = allowed_to_share or user_is_owner
-        if user_is_fulladmin:
+        share = allowed_to_share or is_owner
+        if is_fulladmin:
             share = True
         if share:
             if not target_dir:
-                target_dir = getPath(image, slot)
+                target_dir = get_path(image, slot)
                 # failed path
                 if not target_dir:
                     continue
 
-            src_fileset_path, src_fname = getFilesetPath(conn, image.id)
+            src_fileset_path, src_fname = get_fileset_path(conn, image.id)
 
             # add tp linkNames and linkTarget list
             if src_fileset_path:
@@ -686,7 +686,7 @@ def addImages(conn, slot, images, user, add_attachments,
                     name, extension = os.path.splitext(image.getName())
                     src = os.path.join(MANAGED_REP, src_fileset_path)
 
-                    link_names, link_target = checkLinks(
+                    link_names, link_target = check_links(
                         src, target_dir, name, link_names,
                         link_target, image.id
                     )
@@ -696,39 +696,39 @@ def addImages(conn, slot, images, user, add_attachments,
                         os.path.join(MANAGED_REP, src_fileset_path), src_fname
                     )
 
-                    link_names, link_target = checkLinks(
+                    link_names, link_target = check_links(
                         src, target_dir, src_fname, link_names, link_target,
                         image.id
                     )
 
                 # if data owned by others - owner of this data should be notify
                 if not user_is_owner and allowed_to_share:
-                    addToNotifyList(get_owner_of_data(image), image.id)
+                    add_to_notify_list(get_owner_of_data(image), image.id)
             else:
                 print("# WARNING: No raw file or fileset available")
-                setWarning()
+                set_warning()
 
             # add available attachments if required
             if add_attachments:
-                addAttachment(image, target_dir)
+                add_attachment(image, target_dir)
         else:
             print(
                 f"# WARNING: You are not allowed to share image: {image.getId()}. (ownership: {user_is_owner}, group permission: {allowed_to_share})"  # noqa
             )
-            setWarning()
+            set_warning()
 
     # create links from proof images
-    createSymlinks(link_names, link_target)
+    create_symlinks(link_names, link_target)
 
 
-def addDatasets(
+def add_datasets(
     conn, slot, datasets, user, add_attachments,
     allowed_to_share, target_dir=None
 ):
     """
     TODO: doubled with addPath?
     Check if parent project dir exists (and create one if not) and
-    afterwards calls createObjectDir for given dataset objects
+    afterwards calls create_object_dir for given dataset objects
     and add images
     Args:
       conn: BlitzGateway connection
@@ -744,20 +744,20 @@ def addDatasets(
         if not target_dir:
             project_obj = dataset.getParent()
             if project_obj is not None:
-                link_dir = createObjectDir(slot, project_obj,
-                                           project_obj.getName())
+                link_dir = create_object_dir(slot, project_obj,
+                                             project_obj.getName())
             else:
                 link_dir = slot
         else:
             link_dir = target_dir
 
         if link_dir is not None:
-            link_dir = createObjectDir(link_dir, dataset, dataset.getName())
+            link_dir = create_object_dir(link_dir, dataset, dataset.getName())
 
             if add_attachments:
-                addAttachment(dataset, link_dir)
+                add_attachment(dataset, link_dir)
 
-            addImages(
+            add_images(
                 conn,
                 slot,
                 dataset.listChildren(),
@@ -768,10 +768,11 @@ def addDatasets(
             )
 
 
-def addProjects(conn, slot, projects, user, add_attachments, allowed_to_share):
+def add_projects(conn, slot, projects, user, add_attachments,
+                 allowed_to_share):
     """
     TODO: doubled with addPath?
-    Calls createObjectDir for given project objects and add child datasets
+    Calls create_object_dir for given project objects and add child datasets
     Args:
         conn: BlitzGateway connection
         slot: path to access area
@@ -781,12 +782,12 @@ def addProjects(conn, slot, projects, user, add_attachments, allowed_to_share):
         allowed_to_share (bool):
     """
     for project in projects:
-        link_dir = createObjectDir(slot, project, project.getName())
+        link_dir = create_object_dir(slot, project, project.getName())
         if link_dir is not None:
             if add_attachments:
-                addAttachment(project, link_dir)
+                add_attachment(project, link_dir)
 
-            addDatasets(
+            add_datasets(
                 conn,
                 slot,
                 project.listChildren(),
@@ -797,12 +798,12 @@ def addProjects(conn, slot, projects, user, add_attachments, allowed_to_share):
             )
 
 
-def addPlates(conn, slot, plates, user, add_attachments,
-              allowed_to_share, target_dir=None):
+def add_plates(conn, slot, plates, user, add_attachments,
+               allowed_to_share, target_dir=None):
     """
     TODO: doubled with addPath?
     Check if parent screen dir exists (and create one if not)
-    and afterwards calls createObjectDir for given plates objects
+    and afterwards calls create_object_dir for given plates objects
     and add images
     Args:
       conn: BlitzGateway connection
@@ -818,33 +819,33 @@ def addPlates(conn, slot, plates, user, add_attachments,
         if not target_dir:
             screen_obj = plate.getParent()
             if screen_obj is not None:
-                link_dir = createObjectDir(slot, screen_obj,
-                                           screen_obj.getName())
+                link_dir = create_object_dir(slot, screen_obj,
+                                             screen_obj.getName())
             else:
                 link_dir = slot
         else:
             link_dir = target_dir
 
         if link_dir is not None:
-            link_dir = createObjectDir(link_dir, plate, plate.getName())
+            link_dir = create_object_dir(link_dir, plate, plate.getName())
 
             if add_attachments:
-                addAttachment(plate, link_dir)
+                add_attachment(plate, link_dir)
             image_list = []
             for well in plate.listChildren():
                 index = well.countWellSample()
 
                 for index in range(0, index):
                     image_list.append(well.getImage(index))
-            addImages(
+            add_images(
                 conn, slot, image_list, user, add_attachments,
                 allowed_to_share, link_dir
             )
 
 
-def addScreens(conn, slot, screens, user, add_attachments, allowed_to_share):
+def add_screens(conn, slot, screens, user, add_attachments, allowed_to_share):
     """
-    Calls createObjectDir for given screen objects and add child plates
+    Calls create_object_dir for given screen objects and add child plates
      Args:
         conn: BlitzGateway connection
         slot: path to access area
@@ -854,12 +855,12 @@ def addScreens(conn, slot, screens, user, add_attachments, allowed_to_share):
         allowed_to_share (bool):
     """
     for screen in screens:
-        link_dir = createObjectDir(slot, screen, screen.getName())
+        link_dir = create_object_dir(slot, screen, screen.getName())
         if link_dir is not None:
             if add_attachments:
-                addAttachment(screen, link_dir)
+                add_attachment(screen, link_dir)
 
-            addPlates(
+            add_plates(
                 conn,
                 slot,
                 screen.listChildren(),
@@ -870,7 +871,7 @@ def addScreens(conn, slot, screens, user, add_attachments, allowed_to_share):
             )
 
 
-def getRandomString(n):
+def get_random_string(n):
     """generating random strings
     Args:
         n: length of random number
@@ -878,7 +879,7 @@ def getRandomString(n):
     return "".join(random.choices(string.ascii_uppercase + string.digits, k=n))
 
 
-def generateHashName(user, n, access_area_name):
+def generate_hash_name(user, n, access_area_name):
     """
     Generate name for access area like
     "rn_<randomNumber>_<userID>_<userSpecificAreaName>"
@@ -890,10 +891,10 @@ def generateHashName(user, n, access_area_name):
         hashname: string like "rn_<randomNumber>_<userID>_<userSpecificAreaName>"  # noqa
     """
 
-    return "%s_%s_%s_%s" % ("rn", getRandomString(n), user.getId(), access_area_name)  # noqa
+    return "%s_%s_%s_%s" % ("rn", get_random_string(n), user.getId(), access_area_name)  # noqa
 
 
-def createDefaultAreaName():
+def create_default_area_name():
     """
     Return default name for an area.
     Returns:
@@ -903,7 +904,7 @@ def createDefaultAreaName():
     return date.strftime("%Y-%m-%d_%H-%M-%S")
 
 
-def generateNewArea(user, name):
+def generate_new_area(user, name):
     """
     Args:
         user: user object
@@ -913,10 +914,10 @@ def generateNewArea(user, name):
         hash_name: whole name of area directory
     """
 
-    hash_name = generateHashName(user, LENGTH_HASH, name)
+    hash_name = generate_hash_name(user, LENGTH_HASH, name)
 
     while os.path.exists(os.path.join(OPENLINK_DIR, hash_name)):
-        hash_name = generateHashName(user, LENGTH_HASH, name)
+        hash_name = generate_hash_name(user, LENGTH_HASH, name)
 
     path_to_area = os.path.join(OPENLINK_DIR, hash_name)
     os.mkdir(path_to_area)
@@ -956,7 +957,7 @@ def email_results(conn, image_ids, email, smtp_obj):
     return
 
 
-def notifyMembers(conn):
+def notify_members(conn):
     """
     Notify owner of the data via mail if they was shared by group owner
     """
@@ -975,7 +976,8 @@ def notifyMembers(conn):
         print("# INFO: Notification via mail took %.2f seconds" % (time.time() - start))  # noqa
 
 
-def addObjToArea(conn, params, existing_areas_names=None, paths=None):
+def add_object_to_area(conn, params, existing_areas_names=None,
+                       paths=None):
     """
     add selected object and its content to a slot on OPENLINK_DIR
     as link to sources on ManagedRepository
@@ -994,10 +996,11 @@ def addObjToArea(conn, params, existing_areas_names=None, paths=None):
     NOTIFICATION_LIST = {}
 
     # check group permissions for sharing
-    allowed_to_share = groupAllowedToShareData(conn, conn.getUser().getId())
+    user_id = conn.getUser().getId()
+    allowed_to_share = group_allowed_to_share_data(conn, user_id)
 
     # prepare openLink area
-    access_area_path, hash_name = prepareOpenLinkArea(
+    access_area_path, hash_name = prepare_open_link_area(
         existing_areas_names, conn, params, paths
     )
 
@@ -1013,19 +1016,19 @@ def addObjToArea(conn, params, existing_areas_names=None, paths=None):
 
     # parse json with object ids available in this area to dict
     content_file_name = "%s/%s" % (access_area_path, CONTENT_FILE)
-    loadDictContent(content_file_name)
+    load_dict_content(content_file_name)
 
     if dest_objs is None:
-        setError()
+        set_error()
         return None, "ERROR: Given objects not available"
     if dest_type is None:
-        setError()
+        set_error()
         return (
             None,
             "ERROR: Can't identify selected object. Please select Projects, Datasets or Images",  # noqa
         )
     elif dest_type == "Project":
-        addProjects(
+        add_projects(
             conn,
             access_area_path,
             dest_objs,
@@ -1034,7 +1037,7 @@ def addObjToArea(conn, params, existing_areas_names=None, paths=None):
             allowed_to_share,
         )
     elif dest_type == "Dataset":
-        addDatasets(
+        add_datasets(
             conn,
             access_area_path,
             dest_objs,
@@ -1043,7 +1046,7 @@ def addObjToArea(conn, params, existing_areas_names=None, paths=None):
             allowed_to_share,
         )
     elif dest_type == "Screen":
-        addScreens(
+        add_screens(
             conn,
             access_area_path,
             dest_objs,
@@ -1052,7 +1055,7 @@ def addObjToArea(conn, params, existing_areas_names=None, paths=None):
             allowed_to_share,
         )
     elif dest_type == "Plate":
-        addPlates(
+        add_plates(
             conn,
             access_area_path,
             dest_objs,
@@ -1061,7 +1064,7 @@ def addObjToArea(conn, params, existing_areas_names=None, paths=None):
             allowed_to_share,
         )
     elif dest_type == "Image":
-        addImages(
+        add_images(
             conn,
             access_area_path,
             dest_objs,
@@ -1070,8 +1073,8 @@ def addObjToArea(conn, params, existing_areas_names=None, paths=None):
             allowed_to_share,
         )
 
-    addToCurlFile(access_area_path, hash_name)
-    writeDictContent(content_file_name)
+    add_to_curl_file(access_area_path, hash_name)
+    write_dict_content(content_file_name)
     url = "%s/%s/" % (URL, hash_name)
     cmd = CMD % (URL, hash_name.replace(" ", "%20"), CURL_FILE)
 
@@ -1083,31 +1086,31 @@ def addObjToArea(conn, params, existing_areas_names=None, paths=None):
     print(cmd)
     print("###\n")
 
-    notifyMembers(conn)
+    notify_members(conn)
     return url
 
 
-def prepareOpenLinkArea(existing_areas_names, conn, params, paths):
+def prepare_open_link_area(existing_areas_names, conn, params, paths):
     """
     Return path to openlink area and hashName
     """
     # get available openlink
     if params.get(PARAM_ADD_TO_SLOT) and paths and len(paths) > 0:
         index = existing_areas_names.index(params.get(PARAM_SLOTS))
-        access_area_path = paths[index]
-        hash_name = os.path.basename(access_area_path)
+        area_path = paths[index]
+        hash_name = os.path.basename(area_path)
     else:
         # create new openlink
         area_name = params.get(PARAM_SLOT_NAME)
         if not area_name:
-            area_name = createDefaultAreaName()
-        access_area_path, hash_name = generateNewArea(conn.getUser(),
-                                                      area_name)
+            area_name = create_default_area_name()
+        area_path, hash_name = generate_new_area(conn.getUser(),
+                                                 area_name)
 
-    return access_area_path, hash_name
+    return area_path, hash_name
 
 
-def parseAreaNames(p):
+def parse_area_names(p):
     """
     Return name of openLink area specified by user
     """
@@ -1116,11 +1119,11 @@ def parseAreaNames(p):
     except AttributeError:
         name = None  # apply your error handling
         print("## ERROR ## at parse OpenLink names")
-        setError()
+        set_error()
     return name
 
 
-def getAreasOfUser(id):
+def get_areas_of_user(id):
     """
     Args:
         id: user id
@@ -1134,7 +1137,7 @@ def getAreasOfUser(id):
     return values
 
 
-def getExistingAreas(conn):
+def get_existing_areas(conn):
     """
     get all slots for current user
     (OPENLINK_DIR/rn_<RN>_<userid>_<accessAreaName>/;
@@ -1152,7 +1155,7 @@ def getExistingAreas(conn):
         user_name = user.getName()
         list_of_directories_for_user = None
         if os.path.exists(OPENLINK_DIR):
-            list_of_directories_for_user = getAreasOfUser(str(user.getId()))
+            list_of_directories_for_user = get_areas_of_user(str(user.getId()))
 
         if not list_of_directories_for_user or len(list_of_directories_for_user) == 0:  # noqa
             return ["No OpenLinks available for %s" % user_name], []
@@ -1161,7 +1164,7 @@ def getExistingAreas(conn):
         values = []
         paths = []
         for p in list_of_directories_for_user:
-            area_name = parseAreaNames(os.path.basename(p))
+            area_name = parse_area_names(os.path.basename(p))
 
             if area_name:
                 timestamp = os.path.getctime(p)
@@ -1177,7 +1180,7 @@ def getExistingAreas(conn):
             "## ERROR ##: while reading OpenLink : %s\n %s %s"
             % (str(e), exc_type, exc_tb.tb_lineno)
         )
-        setError()
+        set_error()
 
     if len(values) == 0:
         values = ["No OpenLink found for %s" % user_name]
@@ -1195,7 +1198,7 @@ def run_script():
     client.createSession()
     conn = omero.gateway.BlitzGateway(client_obj=client)
     conn.SERVICE_OPTS.setOmeroGroup(-1)
-    existing_area_names, paths = getExistingAreas(conn)
+    existing_area_names, paths = get_existing_areas(conn)
     client.closeSession()
 
     data_types = [
@@ -1281,7 +1284,8 @@ def run_script():
             if orep:
                 ORIGINAL_REP = orep
             # call main script, return the dest project
-            message = addObjToArea(conn, params, existing_area_names, paths)
+            message = add_object_to_area(conn, params, existing_area_names,
+                                         paths)
             message = "After reload you can find URL and batch download command listed under OpenLink in the right hand pane"  # noqa
 
             hints = []
