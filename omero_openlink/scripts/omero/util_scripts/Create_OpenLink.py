@@ -259,7 +259,6 @@ def get_original_file(image_obj):
 
 
 def write_dict_content(path):
-    global CONTENT_DICT
     with open(path, 'w') as f:
         json.dump(CONTENT_DICT, f)
 
@@ -275,7 +274,6 @@ def load_dict_content(path):
 
 
 def exists_in_dict_content(path, id):
-    global CONTENT_DICT
     if not CONTENT_DICT:
         return False
 
@@ -285,7 +283,6 @@ def exists_in_dict_content(path, id):
 
 
 def get_content_from_dict_by_id(id):
-    global CONTENT_DICT
     if not CONTENT_DICT:
         return False
     paths = [k for k, v in CONTENT_DICT.items() if v == id]
@@ -294,7 +291,6 @@ def get_content_from_dict_by_id(id):
 
 
 def add_to_dict_content(path, id):
-    global CONTENT_DICT
     CONTENT_DICT.update({path: id})
 
 
@@ -566,7 +562,6 @@ def add_attachment(obj, tdir):
         tdir: path where links to the attachments should be created
     Returns:
     """
-    global ORIGINAL_REP
     if tdir is not None:
         for ann in obj.listAnnotations():
             if isinstance(ann, omero.gateway.FileAnnotationWrapper):
@@ -661,7 +656,6 @@ def add_images(conn, slot, images, user, add_attachments,
     link_names = []
     link_target = []
     user_name = user.getName()
-    global MANAGED_REP
 
     # proof images
     for image in images:
@@ -961,8 +955,6 @@ def notify_members(conn):
     """
     Notify owner of the data via mail if they was shared by group owner
     """
-    global NOTIFICATION_LIST
-
     if len(NOTIFICATION_LIST) == 0:
         return
     else:
